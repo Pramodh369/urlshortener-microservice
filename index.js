@@ -69,10 +69,16 @@ app.get('/api/shorturl/:short_url', function(req, res) {
     return res.json({ error: 'No short URL found for the given input' });
   }
 
-  const originalUrl = urlDatabase[shortUrl - 1];
+  let originalUrl = urlDatabase[shortUrl - 1];
   if (!originalUrl) {
     return res.json({ error: 'No short URL found for the given input' });
   }
+
+  // Ensure the URL includes a protocol for proper redirect
+  if (!/^https?:\/\//i.test(originalUrl)) {
+    originalUrl = 'http://' + originalUrl;
+  }
+
   res.redirect(originalUrl);
 });
 
