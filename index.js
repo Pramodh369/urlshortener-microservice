@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const dns = require('dns');
+
 const app = express();
 
 // Basic Configuration
@@ -31,13 +31,7 @@ var urlCounter = 0;
 app.post('/api/shorturl', function(req, res) {
   var originalUrl = req.body.url;
 
-  // Validate URL format with regex for http/https
-  var urlRegex = /^https?:\/\/.+/;
-  if (!urlRegex.test(originalUrl)) {
-    return res.json({ error: 'invalid url' });
-  }
-
-  // Parse the URL to get the hostname
+  // Validate URL using the URL constructor
   var urlObj;
   try {
     urlObj = new URL(originalUrl);
@@ -45,23 +39,25 @@ app.post('/api/shorturl', function(req, res) {
     return res.json({ error: 'invalid url' });
   }
 
-  // Verify the hostname with dns.lookup
-  dns.lookup(urlObj.hostname, function() {
-    // Check if URL already exists
-    var existing = urlDatabase.find(function(item) {
-      return item.original_url === originalUrl;
-    });
-    if (existing) {
-      return res.json({ original_url: existing.original_url, short_url: existing.short_url });
-    }
+  // Only allow http and https protocols
+  if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+    return res.json({ error: 'invalid url' });
+  }
 
-    // Create new entry with short_url as a Number
-    urlCounter++;
-    var entry = { original_url: originalUrl, short_url: urlCounter };
-    urlDatabase.push(entry);
-
-    res.json({ original_url: originalUrl, short_url: urlCounter });
+  // Check if URL already exists
+  var existing = urlDatabase.find(function(item) {
+    return item.original_url === originalUrl;
   });
+  if (existing) {
+    return res.json({ original_url: existing.original_url, short_url: existing.short_url });
+  }
+
+  // Create new entry with short_url as a Number
+  urlCounter++;
+  var entry = { original_url: originalUrl, short_url: urlCounter };
+  urlDatabase.push(entry);
+
+  res.json({ original_url: originalUrl, short_url: urlCounter });
 });
 
 // GET /api/shorturl/:short_url - redirect to original URL
