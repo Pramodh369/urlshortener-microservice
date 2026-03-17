@@ -25,7 +25,16 @@ app.get('/api/hello', function(req, res) {
 });
 
 // File-based URL storage for persistence across restarts
-const DATA_FILE = path.join(__dirname, 'public', 'data.json');
+const DATA_DIR = path.join(__dirname, 'data');
+const DATA_FILE = path.join(DATA_DIR, 'urls.json');
+
+// Ensure data directory and file exist on startup
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+if (!fs.existsSync(DATA_FILE)) {
+  fs.writeFileSync(DATA_FILE, '[]');
+}
 
 function loadData() {
   try {
@@ -43,6 +52,9 @@ function loadData() {
 }
 
 function saveData(data) {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
@@ -63,8 +75,9 @@ app.post('/api/shorturl', function(req, res) {
     return res.json({ error: 'invalid url' });
   }
 
-  // Verify the hostname with dns.lookup
-  dns.lookup(urlObj.hostname, function(err) {
+  // Verify the hostname with dns.lookup (pass only the hostname, not the full URL)
+  var hostname = urlObj.hostname;
+  dns.lookup(hostname, function(err) {
     if (err) {
       return res.json({ error: 'invalid url' });
     }
@@ -92,6 +105,7 @@ app.post('/api/shorturl', function(req, res) {
 // GET /api/shorturl/:short_url - redirect to original URL
 app.get('/api/shorturl/:short_url', function(req, res) {
   var shortUrl = parseInt(req.params.short_url, 10);
+  console.log('Redirect requested for short_url:', shortUrl);
 
   if (isNaN(shortUrl) || shortUrl < 1) {
     return res.json({ error: 'No short URL found for the given input' });
@@ -103,17 +117,12 @@ app.get('/api/shorturl/:short_url', function(req, res) {
   });
 
   if (!entry) {
+    console.log('No entry found for short_url:', shortUrl, '| Data:', JSON.stringify(data));
     return res.json({ error: 'No short URL found for the given input' });
   }
 
-  var originalUrl = entry.original_url;
-
-  // Ensure the URL includes a protocol for proper redirect
-  if (!/^https?:\/\//i.test(originalUrl)) {
-    originalUrl = 'http://' + originalUrl;
-  }
-
-  res.redirect(originalUrl);
+  console.log('Redirecting short_url:', shortUrl, '-> original_url:', entry.original_url);
+  res.redirect(entry.original_url);
 });
 
 app.listen(port, function() {
