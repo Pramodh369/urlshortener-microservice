@@ -2,15 +2,14 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const dns = require('dns');
-const bodyParser = require('body-parser');
 const app = express();
 
 // Basic Configuration
 const port = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
 
 app.use('/public', express.static(`${process.cwd()}/public`));
 
@@ -64,13 +63,16 @@ app.post('/api/shorturl', function(req, res) {
 
 // GET /api/shorturl/:short_url - redirect to original URL
 app.get('/api/shorturl/:short_url', function(req, res) {
-  const shortUrl = parseInt(req.params.short_url);
+  const shortUrl = parseInt(req.params.short_url, 10);
 
   if (isNaN(shortUrl) || shortUrl < 1 || shortUrl > urlDatabase.length) {
     return res.json({ error: 'No short URL found for the given input' });
   }
 
   const originalUrl = urlDatabase[shortUrl - 1];
+  if (!originalUrl) {
+    return res.json({ error: 'No short URL found for the given input' });
+  }
   res.redirect(originalUrl);
 });
 
