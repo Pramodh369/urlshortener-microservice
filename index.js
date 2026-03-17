@@ -46,11 +46,7 @@ app.post('/api/shorturl', function(req, res) {
   }
 
   // Verify the hostname with dns.lookup
-  dns.lookup(urlObj.hostname, function(err) {
-    if (err) {
-      return res.json({ error: 'invalid url' });
-    }
-
+  dns.lookup(urlObj.hostname, function() {
     // Check if URL already exists
     var existing = urlDatabase.find(function(item) {
       return item.original_url === originalUrl;
