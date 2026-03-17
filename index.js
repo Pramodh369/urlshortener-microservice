@@ -72,7 +72,7 @@ app.post('/api/shorturl', function(req, res) {
 app.get('/api/shorturl/:short_url', function(req, res) {
   var shortUrl = +req.params.short_url;
 
-  if (!shortUrl) {
+  if (isNaN(shortUrl) || shortUrl <= 0) {
     return res.json({ error: 'No short URL found for the given input' });
   }
 
