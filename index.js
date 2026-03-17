@@ -105,6 +105,7 @@ app.post('/api/shorturl', function(req, res) {
 // GET /api/shorturl/:short_url - redirect to original URL
 app.get('/api/shorturl/:short_url', function(req, res) {
   var shortUrl = parseInt(req.params.short_url, 10);
+  console.log('Redirect requested for short_url:', shortUrl);
 
   if (isNaN(shortUrl) || shortUrl < 1) {
     return res.json({ error: 'No short URL found for the given input' });
@@ -116,17 +117,12 @@ app.get('/api/shorturl/:short_url', function(req, res) {
   });
 
   if (!entry) {
+    console.log('No entry found for short_url:', shortUrl, '| Data:', JSON.stringify(data));
     return res.json({ error: 'No short URL found for the given input' });
   }
 
-  var originalUrl = entry.original_url;
-
-  // Ensure the URL includes a protocol for proper redirect
-  if (!/^https?:\/\//i.test(originalUrl)) {
-    originalUrl = 'http://' + originalUrl;
-  }
-
-  res.redirect(originalUrl);
+  console.log('Redirecting short_url:', shortUrl, '-> original_url:', entry.original_url);
+  res.redirect(entry.original_url);
 });
 
 app.listen(port, function() {
