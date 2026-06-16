@@ -7,6 +7,15 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
+
+// Normalize double slashes in URL paths (handles trailing slash in Solution Link)
+app.use(function(req, res, next) {
+  if (req.url.match(/\/\//)) {
+    req.url = req.url.replace(/\/+/g, '/');
+  }
+  next();
+});
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
